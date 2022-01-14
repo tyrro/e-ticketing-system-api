@@ -1,0 +1,26 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: e_ticketing_system_api_development
+  # comment out the following fields if not on Docker
+  username: postgres
+  password: password
+  host: postgres
+
+test:
+  <<: *default
+  database: e_ticketing_system_api_test
+  # comment out the following fields if not on Docker
+  username: postgres
+  password: password
+  host: postgres
+
+production:
+  <<: *default
+  database: e_ticketing_system_api_production
+  username: e_ticketing_system
+  password: <%= ENV['E_TICKETING_SYSTEM_API_PASSWORD'] %>
