@@ -6,7 +6,7 @@ threads min_threads_count, max_threads_count
 
 port ENV.fetch('PORT', 3000)
 
-environment ENV.fetch('RAILS_ENV', 'dtevelopment')
+environment ENV.fetch('RAILS_ENV', 'development')
 
 pidfile ENV.fetch('PIDFILE', 'tmp/pids/server.pid')
 

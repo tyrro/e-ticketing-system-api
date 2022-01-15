@@ -6,18 +6,16 @@ default: &default
 development:
   <<: *default
   database: e_ticketing_system_api_development
-  # comment out the following fields if not on Docker
-  username: postgres
-  password: password
-  host: postgres
+  username: <%= ENV.fetch("POSTGRES_USER") { $USER } %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD") { "" } %>
+  host: <%= ENV.fetch("POSTGRES_HOST") { "localhost" } %>
 
 test:
   <<: *default
   database: e_ticketing_system_api_test
-  # comment out the following fields if not on Docker
-  username: postgres
-  password: password
-  host: postgres
+  username: <%= ENV.fetch("POSTGRES_USER") { $USER } %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD") { "" } %>
+  host: <%= ENV.fetch("POSTGRES_HOST") { "localhost" } %>
 
 production:
   <<: *default

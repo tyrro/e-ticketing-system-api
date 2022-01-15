@@ -8,7 +8,7 @@ require 'action_controller/railtie'
 
 Bundler.require(*Rails.groups)
 
-module Monterail
+module ETicketingSystemAPI
   class Application < Rails::Application
     config.load_defaults 6.0
     config.api_only = true
