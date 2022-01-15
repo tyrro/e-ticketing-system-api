@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
+require "./lib/json_web_token"
 require "./lib/exceptions"
 
 class ApiController < ApplicationController
   rescue_from Exceptions::UnprocessableEntityError, Exceptions::InvalidToken, Exceptions::MissingToken,
               with: :unprocessable_entity_error
-  rescue_from Exceptions::UnauthorizedAccessError, with: :unauthorized_error
-  rescue_from TicketPayment::NotEnoughTicketsError, with: :conflict_error
+  rescue_from Exceptions::AuthenticationError, with: :authentication_error
+  rescue_from Exceptions::NotEnoughTicketsError, with: :conflict_error
   rescue_from Payment::Gateway::CardError, Payment::Gateway::PaymentError,
               with: :payment_failed_error
 
@@ -36,7 +37,7 @@ class ApiController < ApplicationController
     render json: { error: error.message }, status: :unprocessable_entity
   end
 
-  def unauthorized_error(error)
+  def authentication_error(error)
     render json: { error: error.message }, status: :unauthorized
   end
 

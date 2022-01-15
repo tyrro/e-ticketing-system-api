@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "./lib/json_web_token"
-
 class UsersController < ApiController
   def signup
     user = User.new(user_params)
@@ -21,7 +19,7 @@ class UsersController < ApiController
     raise Exceptions::UnprocessableEntityError, "password can not be blank" unless password.present?
 
     user = User.find_by(email: email)
-    raise Exceptions::UnauthorizedAccessError, "unauthorized" unless user&.authenticate(password)
+    raise Exceptions::AuthenticationError, "can not be authenticated" unless user&.authenticate(password)
 
     render json: { email: user.email, token: JsonWebToken.encode(user_id: user.id) }
   end
