@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TicketsController < ApiController
-  before_action :ensure_authenticated
+  before_action :ensure_authenticated, except: :index
   before_action :set_event
   before_action :set_tickets
 
