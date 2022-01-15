@@ -5,7 +5,8 @@ class TicketReservation
     ticket.with_lock do
       available_tickets = ticket.available
       remaining_tickets = available_tickets - tickets_count
-      raise Exceptions::NotEnoughTicketsError, "Not enough tickets left." unless remaining_tickets > 1
+      raise Exceptions::NotEnoughTicketsError, "Not enough tickets left." if remaining_tickets == 1
+      raise Exceptions::NotEnoughTicketsError, "Not enough tickets left." if remaining_tickets < 0
 
       reservation = Reservation.create!(
         user: user,
