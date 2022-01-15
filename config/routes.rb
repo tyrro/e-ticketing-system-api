@@ -13,6 +13,7 @@ Rails.application.routes.draw do
 
     resources :tickets, only: %i(index) do
       collection do
+        post :reserve
         post :buy
       end
     end
