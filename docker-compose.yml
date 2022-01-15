@@ -1,4 +1,15 @@
 version: '3.9'
+
+x-default: &default
+  build: .
+  volumes:
+    - .:/var/www/e-ticketing-system-api
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+    POSTGRES_HOST: postgres
+    REDIS_URL: redis://redis:6379/0
+
 services:
   postgres:
     image: postgres:13.4-alpine
@@ -7,20 +18,27 @@ services:
     environment:
       POSTGRES_PASSWORD: password
 
+  redis:
+    image: redis:4.0-alpine
+
   web:
-    build: .
+    <<: *default
     command: >
       sh -c "
         rm -rf tmp/pids/server.pid \
         & bundle exec rails s -p 3000 -b '0.0.0.0'"
-    volumes:
-      - .:/var/www/e-ticketing-system-api
     ports:
       - 3000:3000
     depends_on:
       - postgres
     tty: true
     stdin_open: true
+
+  sidekiq:
+    <<: *default
+    command: bundle exec sidekiq -c 2
+    depends_on:
+      - redis
 
 volumes:
   postgres-data:

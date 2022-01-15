@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TicketsController < ApiController
-  before_action :ensure_authenticated
+  before_action :ensure_authenticated, except: :index
   before_action :set_event
   before_action :set_tickets
 
@@ -11,7 +11,8 @@ class TicketsController < ApiController
 
   def reserve
     tickets_count = params[:tickets_count].to_i
-    return wrong_number_of_tickets unless tickets_count.positive?
+    return wrong_number_of_tickets("Number of tickets must be greater than zero.") unless tickets_count.positive?
+    return wrong_number_of_tickets("Number of tickets must be even.") unless tickets_count.even?
     raise Exceptions::UnprocessableEntityError, "user has active reservation" if current_user.has_active_reservation?(@event)
 
     TicketReservation.call(current_user, @tickets, tickets_count)
@@ -47,7 +48,7 @@ class TicketsController < ApiController
     end
   end
 
-  def wrong_number_of_tickets
-    render json: { error: "Number of tickets must be greater than zero." }, status: :unprocessable_entity
+  def wrong_number_of_tickets(message)
+    render json: { error: message }, status: :unprocessable_entity
   end
 end
