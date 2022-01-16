@@ -20,7 +20,7 @@ class TicketsController < ApiController
   end
 
   def buy
-    payment_token = params[:payment_token]
+    payment_token = params[:token]
     raise Exceptions::UnprocessableEntityError, "user has no active reservation" unless current_user.has_active_reservation?(@event)
 
     TicketConfirmation.call(@tickets, payment_token, current_user.active_reservation(@event))

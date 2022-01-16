@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "./lib/json_web_token"
-require "./lib/exceptions"
-
 class ApiController < ApplicationController
   rescue_from Exceptions::UnprocessableEntityError, Exceptions::InvalidToken, Exceptions::MissingToken,
               with: :unprocessable_entity_error
