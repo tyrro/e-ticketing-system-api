@@ -7,6 +7,8 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require "rspec/rails"
 require "sidekiq/testing"
 
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
@@ -22,6 +24,8 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
 
   config.include FactoryBot::Syntax::Methods
+
+  config.include AuthHelper::Request, type: :request
 
   config.before(:each) do
     Sidekiq::Worker.clear_all

@@ -68,8 +68,10 @@ RSpec.describe "Tickets", type: :request do
     end
   end
 
-  describe "POST events#buy_ticket" do
-    subject { post "/tickets/buy", params: params }
+  describe "POST tickets#reserve" do
+    let(:headers) { { 'Authorization': "Bearer #{token}" } }
+    let(:token) { sign_in_token }
+    subject { post "/tickets/reserve", params: params, headers: headers }
 
     before { subject }
 
@@ -78,20 +80,20 @@ RSpec.describe "Tickets", type: :request do
         let(:event) { create(:event, :with_ticket) }
         let(:ticket) { event.ticket }
 
-        context "valid params" do
-          let(:params) { { event_id: event.id, token: "token", tickets_count: "1" } }
+        context "odd number of tickets" do
+          let(:params) { { event_id: event.id, tickets_count: "1" } }
 
           it "should have correct HTTP status" do
-            expect(response).to have_http_status(:ok)
+            expect(response).to have_http_status(:unprocessable_entity)
           end
 
-          it "should render success message" do
-            expect(response_json).to eq({ success: "Payment succeeded." })
+          it "should render failure message" do
+            expect(response_json).to eq({ error: "Number of tickets must be even." })
           end
         end
 
         context "wrong number of tickets" do
-          let(:params) { { event_id: event.id, token: "token", tickets_count: "-" } }
+          let(:params) { { event_id: event.id, tickets_count: "-" } }
 
           it "should have correct HTTP status" do
             expect(response).to have_http_status(:unprocessable_entity)
@@ -102,46 +104,18 @@ RSpec.describe "Tickets", type: :request do
           end
         end
 
-        context "card error" do
-          let(:params) { { event_id: event.id, token: "card_error", tickets_count: "1" } }
+        context "when there is no active reservation" do
+          let(:params) { { event_id: event.id, tickets_count: "2" } }
 
-          it "should have correct HTTP status" do
-            expect(response).to have_http_status(402)
-          end
-
-          it "should render correct error message" do
-            expect(response_json).to eq({ error: "Your card has been declined." })
-          end
-        end
-
-        context "payment error" do
-          let(:params) { { event_id: event.id, token: "payment_error", tickets_count: "1" } }
-
-          it "should have correct HTTP status" do
-            expect(response).to have_http_status(402)
-          end
-
-          it "should render correct error message" do
-            expect(response_json).to eq({ error: "Something went wrong with your transaction." })
-          end
-        end
-
-        context "not enough tickets left" do
-          let(:params) { { event_id: event.id, token: "token", tickets_count: ticket.available + 1 } }
-
-          it "should have correct HTTP status" do
-            expect(response).to have_http_status(409)
-          end
-
-          it "should render correct error message" do
-            expect(response_json).to eq({ error: "Not enough tickets left." })
+          it "successfully reserves new tickets" do
+            expect(response_json).to eq({ success: "Reservation succeeded." })
           end
         end
       end
 
       context "ticket does not exist" do
         let(:event) { create(:event) }
-        let(:params) { { event_id: event.id, token: "token", tickets_count: "1" } }
+        let(:params) { { event_id: event.id, tickets_count: "1" } }
 
         it "should have correct HTTP status" do
           expect(response).to have_http_status(:not_found)
@@ -154,9 +128,59 @@ RSpec.describe "Tickets", type: :request do
     end
 
     context "event does not exist" do
-      let(:params) { { event_id: "incorrect", token: "token", tickets_count: "1" } }
+      let(:params) { { event_id: "incorrect", tickets_count: "1" } }
 
       it_behaves_like "event not found"
+    end
+  end
+
+  describe "POST tickets#buy" do
+    let(:headers) { { 'Authorization': "Bearer #{token}" } }
+    let(:token) { sign_in_token(user) }
+    let(:user) { create(:user) }
+    let!(:reservation) { create(:reservation, user: user, event: event, created_at: Time.now.utc - 2.minutes) }
+    let(:event) { create(:event, :with_ticket) }
+    let(:ticket) { event.ticket }
+    subject { post "/tickets/buy", params: params, headers: headers }
+
+    context "when there is an active reservation" do
+      let(:params) { { event_id: event.id, token: "token" } }
+
+      it "successfully books the tickets" do
+        subject
+        expect(response_json).to eq({ success: "Payment succeeded." })
+      end
+
+      it "successfully confirms the tickets" do
+        expect(TicketConfirmation).to receive(:call).with(ticket, params[:token], reservation)
+        subject
+      end
+    end
+
+    context "card error" do
+      before { subject }
+      let(:params) { { event_id: event.id, token: "card_error" } }
+
+      it "should have correct HTTP status" do
+        expect(response).to have_http_status(:payment_required)
+      end
+
+      it "should render correct error message" do
+        expect(response_json).to eq({ error: "Your card has been declined." })
+      end
+    end
+
+    context "payment error" do
+      before { subject }
+      let(:params) { { event_id: event.id, token: "payment_error" } }
+
+      it "should have correct HTTP status" do
+        expect(response).to have_http_status(:payment_required)
+      end
+
+      it "should render correct error message" do
+        expect(response_json).to eq({ error: "Something went wrong with your transaction." })
+      end
     end
   end
 end
